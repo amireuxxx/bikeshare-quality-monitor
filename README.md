@@ -33,7 +33,9 @@ pytest -q
 At each time t, let `n_t` be stations observed and `d_t` the number with 0 bikes or 0 open docks. The blocked rate is `p_t=d_t/n_t`. The pooled center is `pbar=Σd_t/Σn_t`; 3-sigma limits are `max(0,pbar-3√[pbar(1-pbar)/n_t])` and `min(1,pbar+3√[pbar(1-pbar)/n_t])`. This is a conventional binomial p-chart, but repeated stations and predictable commuting patterns challenge independence and constant-risk assumptions. Treat signals as prompts for further stratified investigation, not proof of abnormal causes.
 
 ## Reproducibility and limitations
-The test datasets are **synthetic**, not actual station observations. `generate_data.py` regenerates them deterministically. There is no booking feed or deployment claim. Staff dispatch suggestions rely on most recent observations, not optimized routes. The application is suitable as a local demonstration; instructor Posit Connect deployment is a separate step requiring course access.
+The three test datasets are **synthetic**, not real station observations. `python generate_data.py` (from the repository root) regenerates them exactly, because every random draw uses a fixed seed; `pytest` checks that the committed CSV files match the generator and that each scenario behaves as documented in [data/CODEBOOK.md](data/CODEBOOK.md). Staff dispatch suggestions use the most recent observation only, not optimized routes. The tool is an exploratory statistical aid, not a real-time feed.
+
+The p-chart assumes each station observation is an independent draw with the same blocking probability. In practice the same stations are observed repeatedly and demand follows commuting patterns, so a signal means "investigate", not "proof of a special cause". The `mixed_imbalance.csv` scenario shows the limit: its p-chart looks in control, yet four stations account for most blocked observations, which only the station ranking reveals.
 
 ## Submission
 Use this public repository link and the project/demo details on Devpost. See [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md). Add actual team members and a verified live deployment URL once available.
