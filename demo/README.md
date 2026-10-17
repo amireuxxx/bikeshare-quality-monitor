@@ -56,7 +56,7 @@ move bikes from the full downtown docks back to the empty residential ones.
 | Unavailable at the latest snapshot | ST05 (FULL), ST14 (FULL), ST07 (FULL) |
 
 **How to read this:** the chart is quiet because the problem does not depend on the time of day: four stations are
-blocked all day, every day. The station ranking (section 4 of the page) is where it shows up. Action: a permanent fix
+blocked 31% to 53% of the time, at every hour of the day. The station ranking (section 4 of the page) is where it shows up. Action: a permanent fix
 for those stations (capacity, docking layout, regular rebalancing), not a one-off dispatch. This scenario is also the
 reason the README says a p-chart signal means "investigate", and that a p-chart assumes the same blocking probability at
 every station.
