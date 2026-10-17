@@ -11,6 +11,7 @@ The fleet operations supervisor of a bikeshare system, who decides which station
 Upload timestamped station counts (a CSV), or pick one of three synthetic scenarios, and the page shows:
 - Summary cards: observations, stations, blocked rate, out-of-control points, stations unavailable now.
 - A p-chart of the share of stations that are empty or full at each time, with 3-sigma limits that depend on how many stations were observed.
+- A station-by-time heatmap (orange = empty, violet = full) and a network replay: a schematic map with a time slider that replays every station's state through the day. Map positions are synthetic, not real geography.
 - A station ranking by blocked rate, with empty and full counts and the latest status.
 - Dispatch suggestions for stations that are empty ("Deliver bikes") or full ("Redistribute bikes") at the latest observation.
 
