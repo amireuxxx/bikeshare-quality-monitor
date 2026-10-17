@@ -24,7 +24,7 @@ Stratify by time of day and by station group, add run-rule tests (for example ei
 
 **GitHub:** https://github.com/amireuxxx/bikeshare-quality-monitor
 
-**Demo URL:** https://connect.systems-apps.com/content/9bdb4f14-e4de-47eb-b7cc-cc1093312e94/
+**Demo URL:** https://connect.systems-apps.com/content/03f2311e-aedb-498d-a3b2-a1e91474a54d/
 
 **Team members:** [ADD names, with each person's consent]
 

@@ -28,7 +28,7 @@ No parameters: the control limits are fixed at three sigma. Four columns is the 
 - **Stack:** Python REST API (FastAPI) and a browser dashboard (HTML, JavaScript and Chart.js) served by the same app.
 - **Entry point:** `backend.main:app`; statistics in `backend/analysis.py` (no web code inside it).
 - **Scripts:** `testme.sh` (run locally), `manifestme.sh` (write the Posit Connect manifest), `deployme.sh` (publish).
-- Deployed on the course Posit Connect server: <https://connect.systems-apps.com/content/9bdb4f14-e4de-47eb-b7cc-cc1093312e94/>.
+- Deployed on the course Posit Connect server: <https://connect.systems-apps.com/content/03f2311e-aedb-498d-a3b2-a1e91474a54d/>.
 
 ## 6. Outputs
 - Summary cards: observations, stations, blocked rate, out-of-control points, stations unavailable now.
