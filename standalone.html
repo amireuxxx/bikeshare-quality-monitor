@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BikeShare Quality Monitor</title>
-<script src="/static/chart.umd.min.js"></script>
+<script src="static/chart.umd.min.js"></script>
 <style>
 :root{
   --ink:#0d1b2a;--muted:#5b6b7d;--line:#e2e8f0;--bg:#f2f5f9;--card:#fff;
@@ -221,7 +221,7 @@ async function load(file,key){
   setStatus('Analyzing…');
   try{
     const fd=new FormData();fd.append('file',file);
-    const res=await fetch('/api/analyze',{method:'POST',body:fd});
+    const res=await fetch('api/analyze',{method:'POST',body:fd});
     const data=await res.json();
     if(!res.ok)throw Error(data.detail||'Analysis failed');
     const text=await file.text();
@@ -310,11 +310,11 @@ function render(d,csvText){
 }
 
 // scenario cards + upload
-fetch('/api/examples').then(r=>r.json()).then(list=>{
+fetch('api/examples').then(r=>r.json()).then(list=>{
   $('scen').innerHTML=list.map(x=>{const m=SCEN[x.filename]||{title:x.filename.replace('.csv','').replace(/_/g,' '),tag:'Example',cls:'',text:'Example dataset.'};
     return '<button class="sc '+m.cls+'" data-file="'+esc(x.filename)+'"><div class="t">'+esc(m.title)+' <span class="tag">'+esc(m.tag)+'</span></div><div class="d">'+esc(m.text)+'</div></button>'}).join('');
   document.querySelectorAll('.sc').forEach(b=>b.onclick=async()=>{
-    const r=await fetch('/data/'+b.dataset.file);
+    const r=await fetch('data/'+b.dataset.file);
     load(new File([await r.blob()],b.dataset.file,{type:'text/csv'}),b.dataset.file)});
   const first=document.querySelector('.sc.sig')||document.querySelector('.sc');if(first)first.click();
 });

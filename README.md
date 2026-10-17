@@ -43,7 +43,7 @@ One observation per station and timestamp; at most 50,000 rows and 5 MB. A stati
 | `GET /` | the dashboard |
 | `GET /api/health` | `{"status": "ok"}` |
 | `POST /api/analyze` | upload a CSV (form field `file`); returns the summary, the p-chart points, the station ranking, the dispatch list and a methodology note. A bad file returns HTTP 422 with the reason |
-| `GET /api/examples` | the three example files, served from `/data/` |
+| `GET /api/examples` | the three example files, served from `data/` |
 
 ```bash
 curl -F "file=@data/commute_shortage.csv" http://localhost:8000/api/analyze
