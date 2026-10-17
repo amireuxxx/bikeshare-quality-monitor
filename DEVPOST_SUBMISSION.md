@@ -1,31 +1,31 @@
-# Devpost project draft — verify with your teammates
+# Devpost project draft (verify every line with your teammates before submitting)
 
 **Project name:** BikeShare Quality Monitor
 
-**Elevator pitch:** A quality control tool that uses statistical process control to monitor bike-sharing stations, detect unusual patterns, and identify bike or dock shortages.
+**Elevator pitch:** A quality-control tool for bikeshare operators: a p-chart shows when stations are unusable, a ranking shows where, and a dispatch list shows which vans to send, instead of dispatching blindly.
 
 ## Inspiration
-Bike-share systems can be hard to use when stations run empty or docks become full. Operators need a way to turn observations into actionable service monitoring.
+The Urban Systems prompt describes a "docks full / docks empty" crisis at rush hour, with maintenance vans dispatched blindly. Operators need to separate ordinary variation from a real special cause, and to know which stations need attention.
 
 ## What it does
-Upload station counts as CSV, calculate the share of station observations blocked at each time, visualize a 3-sigma p-chart, view each station's event frequency, and see which stations currently need attention.
+Upload station counts as a CSV (timestamp, station, capacity, bikes available). The tool plots the share of blocked stations at each time on a 3-sigma p-chart with variable limits, ranks stations by how often they are empty or full, and lists the stations that need a van at the latest observation. Three synthetic scenarios show the behaviors: a stable system, a morning commute wave (7 points above the limit) and chronic imbalance at four stations that the time chart cannot see but the ranking does.
 
 ## How we built it
-Python, FastAPI, JavaScript, HTML/CSS and Chart.js. We calculate pooled binomial p-chart limits, validate input CSVs, and test the tool with three fully synthetic scenarios.
+Python and FastAPI for the statistics and API, a browser dashboard with Chart.js, 14 automated tests (including a hand-calculated p-chart), GitHub Actions, and Posit Connect for deployment. The statistic is one plain tested module, and the three datasets are regenerated exactly by `generate_data.py`.
 
 ## Challenges and limitations
-Repeated station observations and predictable commute cycles complicate binomial assumptions. This demonstration does not ingest live sensors or optimize vehicle routes.
+The same stations are observed repeatedly and commuting is predictable, so the binomial assumptions are only approximate; the tool says so. The datasets are synthetic, there is no live sensor feed, and dispatch suggestions use the latest observation only.
 
 ## Accomplishments
-A reproducible end-to-end prototype with upload, interactive statistics, example data and transparent documentation.
+An end-to-end prototype with upload, an interactive p-chart, three documented test datasets, a codebook, a demo walkthrough and reproducible code.
 
 ## What's next
-Add stratification by time of day, geographic station maps, and staff allocation constraints after collecting real data.
+Stratify by time of day and by station group, add run-rule tests (for example eight points on one side of the center line), map the stations, and add staff and vehicle constraints once real data are collected.
 
 **GitHub:** https://github.com/amireuxxx/bikeshare-quality-monitor
 
-**Demo URL:** [ADD verified live Posit Connect URL]
+**Demo URL:** [ADD the verified live Posit Connect URL]
 
-**Team members:** [ADD names, with their consent]
+**Team members:** [ADD names, with each person's consent]
 
-**Important:** Do not claim the tool is live or that it was deployed unless the URL has been tested.
+**Important:** do not claim the tool is live or deployed unless the URL has been tested.
