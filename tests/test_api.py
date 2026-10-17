@@ -10,8 +10,9 @@ def test_health():
 
 def test_home_and_examples():
     assert client.get("/").status_code==200
-    # Chart.js is served locally, so the dashboard works offline
-    assert "/static/chart.umd.min.js" in client.get("/").text
+    # Chart.js is served locally, so the dashboard works offline. The page uses relative URLs
+    # because Posit Connect serves it under /content/<id>/ instead of at the site root.
+    assert 'src="static/chart.umd.min.js"' in client.get("/").text
     assert client.get("/static/chart.umd.min.js").status_code==200
     examples=client.get("/api/examples")
     assert examples.status_code==200
