@@ -14,4 +14,7 @@ rsconnect deploy fastapi \
   --api-key "$CONNECT_API_KEY" \
   --title "BikeShare Quality Monitor" \
   --entrypoint backend.main:app \
+  --exclude ".env" \
+  --exclude ".pytest_cache" \
+  --exclude ".pytest_cache/**" \
   .

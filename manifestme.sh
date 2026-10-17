@@ -11,5 +11,5 @@ if [ "$want" != "$have" ]; then
   exit 1
 fi
 python -m pip install --quiet rsconnect-python
-rsconnect write-manifest fastapi . --entrypoint backend.main:app
+rsconnect write-manifest fastapi . --entrypoint backend.main:app --exclude ".env" --exclude ".pytest_cache" --exclude ".pytest_cache/**"
 echo "Wrote manifest.json (Python $have). Commit it, then run ./deployme.sh"
