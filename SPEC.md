@@ -3,7 +3,7 @@
 ## 1. Team and prompt
 - **Team name:** [add team name before submitting]
 - **Track:** On-campus (24 hours), Oct 16-17, 2026
-- **Prompt we chose:** Urban Systems, "Bikeshare Fleets" (Devpost on-campus prompts)
+- **Prompt we chose:** 1. Urban Systems: Bikeshare Fleets (Devpost on-campus prompts)
 - **Our public repo:** github.com/amireuxxx/bikeshare-quality-monitor
 
 ## 2. User and use case
@@ -28,7 +28,7 @@ No parameters: the control limits are fixed at three sigma. Four columns is the 
 - **Stack:** Python REST API (FastAPI) and a browser dashboard (HTML, JavaScript and Chart.js) served by the same app.
 - **Entry point:** `backend.main:app`; statistics in `backend/analysis.py` (no web code inside it).
 - **Scripts:** `testme.sh` (run locally), `manifestme.sh` (write the Posit Connect manifest), `deployme.sh` (publish).
-- Deployed on the course Posit Connect server: [ADD the verified URL once it answers].
+- Deployed on the course Posit Connect server: <https://connect.systems-apps.com/content/9bdb4f14-e4de-47eb-b7cc-cc1093312e94/>.
 
 ## 6. Outputs
 - Summary cards: observations, stations, blocked rate, out-of-control points, stations unavailable now.

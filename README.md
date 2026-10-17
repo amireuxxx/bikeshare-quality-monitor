@@ -2,7 +2,7 @@
 
 A quality-control tool for the Cornell Six Sigma Hackathon prompt **Urban Systems: Bikeshare Fleets**. It turns station bike counts into a p-chart, a station ranking and a dispatch list, so maintenance vans stop being sent blindly.
 
-**Live demo:** [ADD the verified Posit Connect URL here once it answers]
+**Live demo:** <https://connect.systems-apps.com/content/9bdb4f14-e4de-47eb-b7cc-cc1093312e94/>
 
 ## Who it is for
 The fleet operations supervisor of a bikeshare system, who decides which stations get a rebalancing or maintenance van next, and whether a stretch of blocked stations (for example the morning rush) is abnormal or ordinary variation.
