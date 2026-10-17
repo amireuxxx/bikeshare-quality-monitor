@@ -6,7 +6,7 @@ Run the tool from the repository root, then open the page:
 bash testme.sh            # http://localhost:8000   (PORT=8765 bash testme.sh if 8000 is taken)
 ```
 
-Live version: **<https://connect.systems-apps.com/content/9bdb4f14-e4de-47eb-b7cc-cc1093312e94/>**
+Live version: **<https://connect.systems-apps.com/content/03f2311e-aedb-498d-a3b2-a1e91474a54d/>**
 
 Each scenario below can be run two ways: click its button on the page, or send the file to the API:
 
