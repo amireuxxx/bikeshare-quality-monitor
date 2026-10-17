@@ -23,7 +23,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 bash testme.sh                     # then open http://localhost:8000
 ```
-Use `PORT=8765 bash testme.sh` if port 8000 is busy. The page loads Chart.js from a CDN, so it needs an internet connection. Interactive API docs are at `/docs`.
+Use `PORT=8765 bash testme.sh` if port 8000 is busy. Chart.js is bundled in `static/`, so the page works without an internet connection. Interactive API docs are at `/docs`.
 
 ## Inputs
 One CSV, one row per station per observation time. There are no other parameters: the control limits are fixed at three sigma.

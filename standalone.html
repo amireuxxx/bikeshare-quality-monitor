@@ -1,18 +1,328 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BikeShare Quality Monitor</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
-:root{font-family:system-ui,sans-serif;color:#172b42;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#152c47;color:white;padding:26px max(24px,calc((100vw - 1100px)/2))}h1{margin:0 0 8px;font-size:28px}main{max-width:1100px;margin:25px auto;padding:0 18px}.panel{background:white;border:1px solid #dce4ef;border-radius:12px;padding:20px;margin-bottom:18px;box-shadow:0 1px 4px #dde3eb}button{padding:10px 16px;border:0;border-radius:7px;background:#1d5d99;color:white;cursor:pointer;margin:5px}button:hover{background:#154576}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.stats div{padding:16px;background:#eaf1f8;border-radius:9px}.stats strong{display:block;font-size:26px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border-bottom:1px solid #e1e7ee;text-align:left}th{background:#edf2f7}canvas{max-height:380px}.muted{color:#55677a}.warn{color:#a03915}.scroll{overflow-x:auto}</style></head><body><header><h1>BikeShare Quality Monitor</h1><div>Six Sigma Hackathon · Statistical process control of station availability</div></header><main>
-<section class="panel"><h2>1 · Load data</h2><p class="muted">Upload observations (CSV) or choose a synthetic demonstration scenario. Required columns: timestamp, station_id, capacity, bikes_available.</p><input id="file" type="file" accept=".csv,text/csv"><button id="upload">Analyze CSV</button><div id="examples"></div><p id="message" role="status"></p></section>
-<section class="panel"><h2>2 · System summary</h2><div class="stats" id="stats"><div>Select a dataset to begin.</div></div></section>
-<section class="panel"><h2>3 · Blocked station p-chart</h2><p class="muted">Each timestamp is a subgroup; blocked means no bikes or no open docks. Three-sigma limits use the number of stations observed at each time.</p><canvas id="chart"></canvas></section>
-<section class="panel"><h2>4 · Station diagnosis</h2><div class="scroll"><table><thead><tr><th>Station</th><th>Blocked rate</th><th>Empty</th><th>Full</th><th>Latest</th><th>Bikes</th><th>Docks</th></tr></thead><tbody id="stations"></tbody></table></div></section>
-<section class="panel"><h2>5 · Dispatch suggestions</h2><div id="dispatch">Load a dataset.</div><p class="muted">Suggestions are indicative; actual moves require distances, vehicles and operational constraints.</p></section>
-<section class="panel"><h2>Method and limitations</h2><p>Pooling observations assumes relatively stable underlying risk and approximate independence. Compare time-of-day and location strata before interpreting control-limit signals. Data are synthetic demonstrations, not live sensor feeds.</p></section>
-</main><script>
-let chart;const $=id=>document.getElementById(id);const safe=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function load(file){$('message').textContent='Analyzing...';try{const fd=new FormData();fd.append('file',file);const res=await fetch('/api/analyze',{method:'POST',body:fd});const data=await res.json();if(!res.ok)throw Error(data.detail||'Analysis failed');render(data);$('message').textContent='Analysis complete.'}catch(e){$('message').textContent=e.message}}
-function render(d){const s=d.summary;$('stats').innerHTML=[['Observations',s.observations],['Stations',s.stations],['Blocked rate',(s.blocked_rate*100).toFixed(1)+'%'],['Out-of-control points',s.out_of_control_timepoints],['Currently unavailable',s.currently_unusable_stations]].map(([a,b])=>'<div>'+safe(a)+'<strong>'+safe(b)+'</strong></div>').join('');
-const p=d.p_chart;if(chart)chart.destroy();chart=new Chart($('chart'),{type:'line',data:{labels:p.map(x=>x.timestamp.replace('T',' ').slice(0,16)),datasets:[{label:'Blocked proportion',data:p.map(x=>x.blocked_rate),borderColor:'#1a6ea5',pointBackgroundColor:p.map(x=>x.out_of_control?'#ce3c31':'#1a6ea5')},{label:'Upper limit',data:p.map(x=>x.ucl),borderColor:'#bb6940',borderDash:[6,4],pointRadius:0},{label:'Center',data:p.map(x=>x.center),borderColor:'#66887a',borderDash:[4,4],pointRadius:0},{label:'Lower limit',data:p.map(x=>x.lcl),borderColor:'#bb6940',borderDash:[6,4],pointRadius:0}]},options:{responsive:true,scales:{y:{min:0,max:1}}}});
-$('stations').innerHTML=d.stations.map(x=>'<tr>'+[x.station_id,(x.blocked_rate*100).toFixed(1)+'%',x.empty_count,x.full_count,x.latest_status,x.latest_bikes,x.latest_docks].map(v=>'<td>'+safe(v)+'</td>').join('')+'</tr>').join('');
-$('dispatch').innerHTML=d.dispatch.length?'<ul>'+d.dispatch.map(x=>'<li><b>'+safe(x.station_id)+'</b>: '+safe(x.recommendation)+' ('+safe(x.issue)+')</li>').join('')+'</ul>':'No currently blocked stations in the latest observation.'}
-$('upload').onclick=()=>{if($('file').files[0])load($('file').files[0]);else $('message').textContent='Choose a CSV file first.'};
-fetch('/api/examples').then(r=>r.json()).then(a=>{$('examples').innerHTML=a.map(x=>'<button data-file="'+safe(x.filename)+'">'+safe(x.filename.replace('.csv','').replace('_',' '))+'</button>').join('');$('examples').querySelectorAll('button').forEach(b=>b.onclick=async()=>{const r=await fetch('/data/'+b.dataset.file);load(new File([await r.blob()],b.dataset.file,{type:'text/csv'}))})});
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BikeShare Quality Monitor</title>
+<script src="/static/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#0d1b2a;--muted:#5b6b7d;--line:#e2e8f0;--bg:#f2f5f9;--card:#fff;
+  --navy:#0a1f35;--navy2:#123b63;--blue:#0b5cad;--teal:#14917f;
+  --empty:#f59e0b;--full:#7c5cff;--ok:#e3efe9;--alert:#e5484d;
+  --radius:14px;--shadow:0 1px 2px rgba(13,27,42,.06),0 8px 24px -12px rgba(13,27,42,.18);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+
+/* ---------- hero ---------- */
+header{background:
+   radial-gradient(900px 300px at 85% -20%,rgba(20,145,127,.45),transparent 60%),
+   radial-gradient(700px 300px at 0% 120%,rgba(124,92,255,.35),transparent 60%),
+   linear-gradient(180deg,var(--navy),var(--navy2));
+  color:#fff;position:relative;overflow:hidden}
+header:before{content:"";position:absolute;inset:0;opacity:.12;
+  background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);
+  background-size:44px 44px;mask-image:linear-gradient(180deg,#000,transparent 85%)}
+.hero{position:relative;padding:34px 0 40px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.mark{flex:none;width:62px;height:62px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;backdrop-filter:blur(4px)}
+.hero h1{margin:0;font-size:32px;letter-spacing:-.02em;line-height:1.15}
+.hero p{margin:6px 0 0;color:#c9d9ea;max-width:640px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:12px;font-weight:600;letter-spacing:.03em;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#e8f1fa}
+.chip.warn{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.55);color:#ffd9a0}
+
+main{padding:26px 0 56px}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:20px}
+.card h2{margin:0 0 4px;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.card h2 .n{flex:none;width:24px;height:24px;border-radius:8px;background:var(--navy);color:#fff;font-size:12px;display:grid;place-items:center}
+.sub{color:var(--muted);margin:0 0 14px;font-size:14px}
+
+/* ---------- scenarios ---------- */
+.scen{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.sc{all:unset;box-sizing:border-box;cursor:pointer;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff;transition:.15s;display:block}
+.sc:hover{border-color:#9db8d6;transform:translateY(-1px)}
+.sc:focus-visible{outline:3px solid #8ec5ff}
+.sc.on{border-color:var(--blue);background:linear-gradient(180deg,#f3f8ff,#fff);box-shadow:0 0 0 3px rgba(11,92,173,.12)}
+.sc .t{display:flex;align-items:center;gap:8px;font-weight:700}
+.sc .tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#eaf1f8;color:#1b4b78}
+.sc.sig .tag{background:#fde8e8;color:#a3262b}
+.sc.chr .tag{background:#efeaff;color:#5538c9}
+.sc .d{color:var(--muted);font-size:13.5px;margin-top:4px}
+.drop{margin-top:12px;border:1.5px dashed #b7c6d8;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:var(--muted);cursor:pointer;background:#fafcfe;transition:.15s;flex-wrap:wrap}
+.drop:hover,.drop.over{border-color:var(--blue);background:#f1f7fe;color:var(--ink)}
+.drop b{color:var(--ink)}
+.drop input{display:none}
+#status{margin:10px 0 0;font-size:13.5px;color:var(--muted);min-height:20px}
+#status.err{color:#b4232a;font-weight:600}
+
+/* ---------- verdict ---------- */
+.verdict{border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;border:1px solid;display:none;gap:14px;align-items:flex-start}
+.verdict.show{display:flex}
+.verdict.sig{background:#fff3f2;border-color:#f6b9b6}
+.verdict.calm{background:#effaf6;border-color:#a8dfce}
+.verdict .ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff}
+.verdict.sig .ic{background:var(--alert)}.verdict.calm .ic{background:var(--teal)}
+.verdict h3{margin:0 0 2px;font-size:16px}
+.verdict p{margin:0;color:#34465a;font-size:14.5px}
+
+/* ---------- KPIs ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:linear-gradient(180deg,#fff,#f7fafd)}
+.kpi .l{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.kpi .v{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+.kpi .c{font-size:12.5px;color:var(--muted)}
+.kpi.bad .v{color:var(--alert)}.kpi.good .v{color:var(--teal)}
+
+/* ---------- chart ---------- */
+.chartbox{position:relative;height:340px}
+.help{margin-top:10px;font-size:13px;color:var(--muted)}
+.help b{color:var(--ink)}
+
+/* ---------- heatmap ---------- */
+.hm{display:grid;gap:2px;margin-top:6px;overflow-x:auto;padding-bottom:4px}
+.hm .rl{font-size:12px;font-weight:700;color:#33475b;display:flex;align-items:center;white-space:nowrap}
+.hm .tl{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:visible;height:16px}
+.cell{height:19px;border-radius:3px;background:var(--ok);min-width:6px}
+.cell.e{background:var(--empty)}.cell.f{background:var(--full)}
+.cell:hover{outline:2px solid var(--ink);outline-offset:0;position:relative;z-index:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- ranking ---------- */
+.rank{display:grid;gap:7px}
+.rr{display:grid;grid-template-columns:54px 1fr 54px 148px;gap:12px;align-items:center;font-size:14px}
+.rr .id{font-weight:700}
+.bar{height:16px;border-radius:5px;background:#eef2f6;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .be{background:var(--empty)}.bar .bf{background:var(--full)}
+.rr .pct{font-weight:700;text-align:right}
+.st{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;justify-self:start;white-space:nowrap}
+.st.EMPTY{background:#fff1d6;color:#8a5a00}.st.FULL{background:#ece7ff;color:#4a2fc0}.st.AVAILABLE{background:var(--ok);color:#1f6b57}
+
+/* ---------- dispatch ---------- */
+.disp{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.dc{border:1px solid var(--line);border-left:5px solid var(--empty);border-radius:12px;padding:12px 14px;background:#fff}
+.dc.FULL{border-left-color:var(--full)}
+.dc .s{font-size:20px;font-weight:800}
+.dc .a{font-weight:600}
+.dc .m{color:var(--muted);font-size:13px;margin-top:2px}
+.none{color:var(--muted);padding:6px 0}
+
+/* ---------- method ---------- */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.formula{font:600 14px/1.6 ui-monospace,Menlo,Consolas,monospace;background:#f3f7fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0}
+ul.lim{margin:6px 0 0 18px;padding:0;color:#34465a;font-size:14px}ul.lim li{margin:3px 0}
+footer{color:var(--muted);font-size:13px;padding:0 0 36px;text-align:center}
+footer a{color:var(--blue)}
+@media(max-width:760px){.two{grid-template-columns:1fr}.rr{grid-template-columns:44px 1fr 46px}.rr .st{display:none}.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+<header><div class="wrap hero">
+  <div class="mark" aria-hidden="true">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <path d="M3 25 L10 19 L16 22 L23 8 L29 14 L33 11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="23" cy="8" r="3.4" fill="#e5484d" stroke="#fff" stroke-width="1.4"/>
+      <path d="M3 30 H33" stroke="#7fa7cd" stroke-width="1.4" stroke-dasharray="3 3"/>
+    </svg>
+  </div>
+  <div>
+    <h1>BikeShare Quality Monitor</h1>
+    <p>Find out <b>when</b> bike stations are blocked, <b>where</b>, and which van to send, using statistical process control instead of guesswork.</p>
+    <div class="chips"><span class="chip">Urban Systems · Bikeshare Fleets</span><span class="chip">p-chart · 3-sigma</span><span class="chip warn">Synthetic demo data</span></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<section class="card">
+  <h2><span class="n">1</span>Choose data</h2>
+  <p class="sub">Pick a scenario, or upload your own station counts. Required columns: <code>timestamp</code>, <code>station_id</code>, <code>capacity</code>, <code>bikes_available</code>.</p>
+  <div class="scen" id="scen"></div>
+  <label class="drop" id="drop"><input id="file" type="file" accept=".csv,text/csv"><span>Upload</span><span><b>Drop a CSV here</b> or click to choose a file</span></label>
+  <div id="status" role="status" aria-live="polite"></div>
+</section>
+
+<div class="verdict" id="verdict"><div class="ic" id="vic">!</div><div><h3 id="vt"></h3><p id="vp"></p></div></div>
+
+<section class="card">
+  <h2><span class="n">2</span>System summary</h2>
+  <div class="kpis" id="kpis"><div class="none">Choose a scenario to begin.</div></div>
+</section>
+
+<section class="card">
+  <h2><span class="n">3</span>When: blocked-station p-chart</h2>
+  <p class="sub">Each dot is one time of day: the share of stations that were empty or full. The shaded band is what ordinary variation produces (3-sigma control limits).</p>
+  <div class="chartbox"><canvas id="chart"></canvas></div>
+  <div class="help"><b>How to read this:</b> a <b style="color:#e5484d">red dot outside the band</b> is a special cause worth investigating. Dots inside the band are ordinary day-to-day noise.</div>
+</section>
+
+<section class="card">
+  <h2><span class="n">4</span>Where: every station, every time</h2>
+  <p class="sub">One row per station, one column per time. Worst stations are at the top.</p>
+  <div id="hm" class="hm"></div>
+  <div class="legend"><span><i style="background:var(--ok)"></i>Available</span><span><i style="background:var(--empty)"></i>Empty (no bikes)</span><span><i style="background:var(--full)"></i>Full (no open docks)</span></div>
+</section>
+
+<section class="card">
+  <h2><span class="n">5</span>Station ranking</h2>
+  <p class="sub">Share of observations in which each station was blocked. Bars are scaled to the worst station.</p>
+  <div class="rank" id="rank"></div>
+</section>
+
+<section class="card">
+  <h2><span class="n">6</span>Dispatch now</h2>
+  <p class="sub">Stations that are empty or full at the latest observation.</p>
+  <div class="disp" id="disp"></div>
+  <p class="help">Suggestions are indicative: real moves also need distances, vehicles and staff.</p>
+</section>
+
+<section class="card">
+  <h2>Method and limits</h2>
+  <div class="two">
+    <div>
+      <b>How the limits are set</b>
+      <div class="formula">p<sub>t</sub> = d<sub>t</sub> / n<sub>t</sub><br>p&#772; = &Sigma;d<sub>t</sub> / &Sigma;n<sub>t</sub><br>limits = p&#772; &plusmn; 3&radic;(p&#772;(1&minus;p&#772;)/n<sub>t</sub>)</div>
+      <span class="sub">d = blocked stations, n = stations observed at time t, clipped to 0 and 1.</span>
+    </div>
+    <div>
+      <b>Be careful</b>
+      <ul class="lim">
+        <li>Assumes independent observations with the same blocking risk at every station. Only approximately true.</li>
+        <li>A signal means "investigate", not "proof of a cause".</li>
+        <li>A quiet chart can hide chronic stations: always read the ranking.</li>
+        <li>All data here are synthetic, not live sensor feeds.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Cornell Six Sigma Hackathon · <a href="https://github.com/amireuxxx/bikeshare-quality-monitor">github.com/amireuxxx/bikeshare-quality-monitor</a></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hhmm=t=>String(t).length>=16?String(t).slice(11,16):String(t);
+const pct=(v,d=1)=>(v*100).toFixed(d)+'%';
+let chart=null;
+
+const SCEN={
+  'baseline.csv':{title:'Baseline',tag:'Stable',cls:'',text:'Normal operations with ordinary ups and downs.'},
+  'commute_shortage.csv':{title:'Commute shortage',tag:'Special cause',cls:'sig',text:'A morning rush-hour wave: neighborhood stations run empty, downtown stations run full.'},
+  'mixed_imbalance.csv':{title:'Mixed imbalance',tag:'Chronic',cls:'chr',text:'Four stations are blocked 31% to 53% of the time, at every hour of the day. Can the time chart see it?'}
+};
+
+function setStatus(msg,err){const s=$('status');s.textContent=msg||'';s.className=err?'err':''}
+
+async function load(file,key){
+  setStatus('Analyzing…');
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const res=await fetch('/api/analyze',{method:'POST',body:fd});
+    const data=await res.json();
+    if(!res.ok)throw Error(data.detail||'Analysis failed');
+    const text=await file.text();
+    render(data,text);
+    document.querySelectorAll('.sc').forEach(b=>b.classList.toggle('on',b.dataset.file===key));
+    setStatus('Analysis complete: '+file.name);
+  }catch(e){setStatus(e.message,true)}
+}
+
+function parseCsv(text){
+  const lines=text.replace(/^﻿/,'').trim().split(/\r?\n/);
+  const head=lines[0].split(',').map(s=>s.trim());
+  const ix=n=>head.indexOf(n);const ti=ix('timestamp'),si=ix('station_id'),ci=ix('capacity'),bi=ix('bikes_available');
+  if([ti,si,ci,bi].some(i=>i<0))return null;
+  return lines.slice(1).filter(Boolean).map(l=>{const c=l.split(',');return{t:c[ti].trim(),s:c[si].trim(),cap:+c[ci],b:+c[bi]}});
+}
+
+function render(d,csvText){
+  const s=d.summary,p=d.p_chart;
+  // verdict
+  const sig=s.out_of_control_timepoints,ooc=p.filter(x=>x.out_of_control).map(x=>hhmm(x.timestamp));
+  const top=d.stations.slice(0,3).map(x=>x.station_id+' '+pct(x.blocked_rate,0)).join(', ');
+  const v=$('verdict');v.className='verdict show '+(sig>0?'sig':'calm');
+  $('vic').textContent=sig>0?'!':'✓';
+  $('vt').textContent=sig>0?'Special cause detected':'No special cause in time';
+  $('vp').textContent=(sig>0
+    ?sig+' of '+s.timepoints+' time points fall outside the control limits (from '+ooc[0]+' to '+ooc[ooc.length-1]+'). Investigate what changed.'
+    :'Every time point is inside the control limits: the variation looks like ordinary day-to-day noise.')
+    +' The chart shows when; the ranking shows where. Highest blocked rates: '+top+'.';
+
+  // KPIs
+  const k=[
+    ['Observations',s.observations,s.timepoints+' times × '+s.stations+' stations',''],
+    ['Blocked rate',pct(s.blocked_rate),'center line (p̄) of the chart',''],
+    ['Signals',sig,'time points outside the limits',sig>0?'bad':'good'],
+    ['Unavailable now',s.currently_unusable_stations,'at the latest observation',s.currently_unusable_stations>0?'bad':'good'],
+    ['Stations',s.stations,'in this dataset','']
+  ];
+  $('kpis').innerHTML=k.map(([l,val,c,cls])=>'<div class="kpi '+cls+'"><div class="l">'+esc(l)+'</div><div class="v">'+esc(val)+'</div><div class="c">'+esc(c)+'</div></div>').join('');
+
+  // p-chart
+  if(chart)chart.destroy();
+  const rate=p.map(x=>x.blocked_rate),ucl=p.map(x=>x.ucl);
+  const top_=Math.min(1,Math.ceil((Math.max(...rate,...ucl)*10)+1)/10);
+  chart=new Chart($('chart'),{type:'line',
+    data:{labels:p.map(x=>hhmm(x.timestamp)),datasets:[
+      {label:'Blocked share',data:rate,borderColor:'#0b5cad',backgroundColor:'#0b5cad',borderWidth:2.6,tension:0,order:1,
+       pointRadius:p.map(x=>x.out_of_control?6:2.5),pointHoverRadius:7,
+       pointBackgroundColor:p.map(x=>x.out_of_control?'#e5484d':'#0b5cad'),pointBorderColor:'#fff',pointBorderWidth:1.5},
+      {label:'Upper limit',data:ucl,borderColor:'#e5484d',borderDash:[6,4],borderWidth:1.6,pointRadius:0,order:3},
+      {label:'Lower limit',data:p.map(x=>x.lcl),borderColor:'#e5484d',borderDash:[6,4],borderWidth:1.6,pointRadius:0,fill:'-1',backgroundColor:'rgba(20,145,127,.10)',order:4},
+      {label:'Center (p̄)',data:p.map(x=>x.center),borderColor:'#14917f',borderDash:[2,4],borderWidth:2,pointRadius:0,order:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:16}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+pct(c.parsed.y),afterBody:i=>'n = '+p[i[0].dataIndex].n+' stations'+(p[i[0].dataIndex].out_of_control?'  ·  OUTSIDE LIMITS':'')}}},
+      scales:{y:{min:0,max:top_,ticks:{callback:x=>Math.round(x*100)+'%'},grid:{color:'#edf1f6'}},x:{grid:{display:false},ticks:{maxTicksLimit:12,autoSkip:true}}}}});
+
+  // heatmap (raw statuses, no statistics)
+  const rows=csvText?parseCsv(csvText):null,hm=$('hm');
+  if(rows&&rows.length){
+    const times=[...new Set(rows.map(r=>r.t))].sort(),map={};
+    rows.forEach(r=>{map[r.s+'|'+r.t]=r});
+    hm.style.gridTemplateColumns='64px repeat('+times.length+',minmax(6px,1fr))';
+    let h='<div></div>'+times.map((t,i)=>'<div class="tl">'+(i%4===0?esc(hhmm(t)):'')+'</div>').join('');
+    d.stations.forEach(st=>{
+      h+='<div class="rl">'+esc(st.station_id)+'</div>';
+      times.forEach(t=>{const r=map[st.station_id+'|'+t];let c='',tip='no data';
+        if(r){c=r.b===0?'e':(r.b===r.cap?'f':'');tip=r.b+' bikes, '+(r.cap-r.b)+' docks'+(c==='e'?' (EMPTY)':c==='f'?' (FULL)':'')}
+        h+='<div class="cell '+c+'" title="'+esc(st.station_id+' · '+hhmm(t)+' · '+tip)+'"></div>'});
+    });
+    hm.innerHTML=h;hm.parentElement.style.display='';
+  }else{hm.parentElement.style.display='none'}
+
+  // ranking
+  const mx=Math.max(...d.stations.map(x=>x.blocked_rate),1e-9);
+  $('rank').innerHTML=d.stations.map(x=>{
+    const we=x.empty_count/x.observations/mx*100,wf=x.full_count/x.observations/mx*100;
+    return '<div class="rr"><div class="id">'+esc(x.station_id)+'</div><div class="bar" title="'+esc(x.empty_count+' empty, '+x.full_count+' full of '+x.observations)+'"><i class="be" style="width:'+we+'%"></i><i class="bf" style="width:'+wf+'%"></i></div><div class="pct">'+pct(x.blocked_rate)+'</div><div class="st '+esc(x.latest_status)+'">Now: '+esc(x.latest_status.toLowerCase())+'</div></div>'}).join('');
+
+  // dispatch
+  const byId={};d.stations.forEach(x=>byId[x.station_id]=x);
+  $('disp').innerHTML=d.dispatch.length?d.dispatch.map(x=>{const st=byId[x.station_id]||{};
+    return '<div class="dc '+esc(x.issue)+'"><div class="s">'+esc(x.station_id)+'</div><div class="a">'+esc(x.recommendation)+'</div><div class="m">'+esc(x.issue)+' now · '+esc(st.latest_bikes)+' bikes, '+esc(st.latest_docks)+' open docks · blocked '+pct(x.blocked_rate,0)+' of the time</div></div>'}).join('')
+    :'<div class="none">No station is empty or full at the latest observation.</div>';
+}
+
+// scenario cards + upload
+fetch('/api/examples').then(r=>r.json()).then(list=>{
+  $('scen').innerHTML=list.map(x=>{const m=SCEN[x.filename]||{title:x.filename.replace('.csv','').replace(/_/g,' '),tag:'Example',cls:'',text:'Example dataset.'};
+    return '<button class="sc '+m.cls+'" data-file="'+esc(x.filename)+'"><div class="t">'+esc(m.title)+' <span class="tag">'+esc(m.tag)+'</span></div><div class="d">'+esc(m.text)+'</div></button>'}).join('');
+  document.querySelectorAll('.sc').forEach(b=>b.onclick=async()=>{
+    const r=await fetch('/data/'+b.dataset.file);
+    load(new File([await r.blob()],b.dataset.file,{type:'text/csv'}),b.dataset.file)});
+  const first=document.querySelector('.sc.sig')||document.querySelector('.sc');if(first)first.click();
+});
+$('file').onchange=e=>{if(e.target.files[0])load(e.target.files[0],'')};
+const drop=$('drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)load(f,'')});
+</script>
+</body>
+</html>
