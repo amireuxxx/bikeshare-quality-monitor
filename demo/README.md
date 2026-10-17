@@ -8,7 +8,7 @@ bash testme.sh            # http://localhost:8000   (PORT=8765 bash testme.sh if
 
 Live version: **<https://connect.systems-apps.com/content/03f2311e-aedb-498d-a3b2-a1e91474a54d/>**
 
-Each scenario below can be run two ways: click its button on the page, or send the file to the API:
+Each scenario below can be run two ways: click its card on the page, or send the file to the API:
 
 ```bash
 curl -F "file=@data/commute_shortage.csv" http://localhost:8000/api/analyze
