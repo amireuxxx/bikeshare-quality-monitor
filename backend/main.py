@@ -17,5 +17,6 @@ async def analyze_upload(file:UploadFile=File(...)):
 @app.get("/api/examples")
 def examples(): return [{"filename":n,"url":"/data/"+n} for n in ("baseline.csv","commute_shortage.csv","mixed_imbalance.csv")]
 app.mount("/data",StaticFiles(directory=ROOT/"data"),name="data")
+app.mount("/static",StaticFiles(directory=ROOT/"static"),name="static")
 @app.get("/")
 def root(): return FileResponse(ROOT/"standalone.html")
