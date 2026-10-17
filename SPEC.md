@@ -1,7 +1,7 @@
 # SPEC: BikeShare Quality Monitor
 
 ## 1. Team and prompt
-- **Team name:** [add team name before submitting]
+- **Team:** Hangting Zhu and Yuxin Wang
 - **Track:** On-campus (24 hours), Oct 16-17, 2026
 - **Prompt we chose:** 1. Urban Systems: Bikeshare Fleets (Devpost on-campus prompts)
 - **Our public repo:** github.com/amireuxxx/bikeshare-quality-monitor

@@ -26,6 +26,6 @@ Stratify by time of day and by station group, add run-rule tests (for example ei
 
 **Demo URL:** https://connect.systems-apps.com/content/03f2311e-aedb-498d-a3b2-a1e91474a54d/
 
-**Team members:** [ADD names, with each person's consent]
+**Team members:** Hangting Zhu and Yuxin Wang
 
 **Important:** do not claim the tool is live or deployed unless the URL has been tested.
